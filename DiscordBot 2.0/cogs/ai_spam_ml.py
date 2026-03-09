@@ -1,100 +1,143 @@
 import discord
 from discord.ext import commands
-from collections import defaultdict
 import time
-from datetime import timedelta
-
-ADMIN_IDS = {487562926333493249}
 
 class AntiSpam(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
 
-        self.user_messages = defaultdict(list)
-
         # config
-        self.TIME_WINDOW = 10
-        self.MESSAGE_LIMIT = 5
-
-        # bật / tắt hệ thống
+        self.cooldown = 10
         self.enabled = True
 
+        # tracking
+        self.user_last_command = {}
 
-    def bypass(self, member: discord.Member):
+        # whitelist
+        self.whitelist_users = set()
+        self.whitelist_roles = set()
 
-        if member.id in ADMIN_IDS:
-            return True
-
-        if member.guild_permissions.administrator:
-            return True
-
-        return False
-
-
-    @commands.command()
-    @commands.has_permissions(administrator=True)
-    async def antispam(self, ctx, mode: str):
-
-        mode = mode.lower()
-
-        if mode == "on":
-            self.enabled = True
-            await ctx.send("✅ Anti-Spam enabled")
-
-        elif mode == "off":
-            self.enabled = False
-            await ctx.send("❌ Anti-Spam disabled")
-
-        else:
-            await ctx.send("Usage: `!antispam on/off`")
-
-
+    # ================================
+    # CHECK SPAM
+    # ================================
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
-
-        if not message.guild:
-            return
-
-        if message.author.bot:
-            return
+    async def on_command(self, ctx):
 
         if not self.enabled:
             return
 
-        if self.bypass(message.author):
-            return
-
-        key = (message.guild.id, message.author.id)
+        user_id = ctx.author.id
         now = time.time()
 
-        self.user_messages[key].append(now)
+        # whitelist user
+        if user_id in self.whitelist_users:
+            return
 
-        self.user_messages[key] = [
-            t for t in self.user_messages[key]
-            if now - t <= self.TIME_WINDOW
-        ]
+        # whitelist role
+        if ctx.guild:
+            for role in ctx.author.roles:
+                if role.id in self.whitelist_roles:
+                    return
 
-        if len(self.user_messages[key]) >= self.MESSAGE_LIMIT:
+        last = self.user_last_command.get(user_id, 0)
 
+        if now - last < self.cooldown:
             try:
-
-                await message.channel.send(
-                    f"🚫 Spam detected {message.author.mention}",
+                await ctx.reply(
+                    f"⏱️ **Spam detected** — wait `{round(self.cooldown - (now-last),1)}s`",
                     delete_after=5
                 )
+            except:
+                pass
 
-                await message.author.timeout(
-                    timedelta(seconds=30),
-                    reason="Spam detected"
-                )
+            raise commands.CommandOnCooldown(
+                commands.Cooldown(1, self.cooldown),
+                self.cooldown
+            )
 
-            except Exception as e:
-                print(e)
+        self.user_last_command[user_id] = now
 
-            self.user_messages[key].clear()
+    # ================================
+    # COMMANDS
+    # ================================
 
-        await self.bot.process_commands(message)
+    @commands.hybrid_command(name="antispam")
+    @commands.has_permissions(administrator=True)
+    async def toggle_antispam(self, ctx, state: str):
+        """
+        Enable / Disable anti spam
+        """
+
+        state = state.lower()
+
+        if state in ["on","enable","true"]:
+            self.enabled = True
+            await ctx.reply("✅ Anti-Spam **Enabled**")
+
+        elif state in ["off","disable","false"]:
+            self.enabled = False
+            await ctx.reply("❌ Anti-Spam **Disabled**")
+
+        else:
+            await ctx.reply("Usage: `/antispam on` or `/antispam off`")
+
+    # ================================
+    # CHANGE COOLDOWN
+    # ================================
+
+    @commands.hybrid_command(name="antispam_cooldown")
+    @commands.has_permissions(administrator=True)
+    async def change_cooldown(self, ctx, seconds: int):
+
+        if seconds < 1:
+            return await ctx.reply("Cooldown must be >= 1s")
+
+        self.cooldown = seconds
+
+        await ctx.reply(f"⏱️ Anti-Spam cooldown set to **{seconds}s**")
+
+    # ================================
+    # WHITELIST USER
+    # ================================
+
+    @commands.hybrid_command(name="antispam_whitelist_user")
+    @commands.has_permissions(administrator=True)
+    async def whitelist_user(self, ctx, member: discord.Member):
+
+        self.whitelist_users.add(member.id)
+
+        await ctx.reply(f"✅ {member.mention} added to anti-spam whitelist")
+
+    # ================================
+    # WHITELIST ROLE
+    # ================================
+
+    @commands.hybrid_command(name="antispam_whitelist_role")
+    @commands.has_permissions(administrator=True)
+    async def whitelist_role(self, ctx, role: discord.Role):
+
+        self.whitelist_roles.add(role.id)
+
+        await ctx.reply(f"✅ Role **{role.name}** added to whitelist")
+
+    # ================================
+    # STATUS
+    # ================================
+
+    @commands.hybrid_command(name="antispam_status")
+    async def antispam_status(self, ctx):
+
+        status = "Enabled" if self.enabled else "Disabled"
+
+        embed = discord.Embed(
+            title="Anti-Spam Status",
+            color=discord.Color.green()
+        )
+
+        embed.add_field(name="Status", value=status)
+        embed.add_field(name="Cooldown", value=f"{self.cooldown}s")
+
+        await ctx.reply(embed=embed)
 
 
 async def setup(bot):
