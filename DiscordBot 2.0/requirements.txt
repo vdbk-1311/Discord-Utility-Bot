@@ -1,0 +1,9 @@
+discord.py
+flask
+aiosqlite
+python-dotenv
+scikit-learn
+pillow
+yt-dlp
+spotipy
+requests
