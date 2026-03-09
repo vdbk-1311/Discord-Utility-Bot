@@ -4,7 +4,7 @@
 ![discord.py](https://img.shields.io/badge/discord.py-2.x-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Maintained](https://img.shields.io/badge/maintained-yes-brightgreen)
-![Stars]([https://img.shields.io/github/stars/vdbk_1311/discord-ai-bot?style=social])
+![Stars]([https://img.shields.io/github/stars/your_name/discord-ai-bot?style=social])
 
 > A modern, scalable **Discord utility bot** featuring a powerful
 > **music system, AI spam detection, leveling system, and moderation
