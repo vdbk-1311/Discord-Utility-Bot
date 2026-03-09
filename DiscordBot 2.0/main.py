@@ -23,7 +23,14 @@ async def on_ready():
     print(f"Bot ID: {bot.user.id}")
     print("=================================")
 
+@bot.event
+async def on_ready():
 
+    await bot.tree.sync()
+
+    print(f"Logged in as {bot.user}")
+    print("Slash commands synced")
+    
 async def load_cogs():
 
     for file in os.listdir("./cogs"):
@@ -52,3 +59,4 @@ async def main():
 
 
 asyncio.run(main())
+
