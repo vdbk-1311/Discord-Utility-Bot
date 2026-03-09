@@ -1,31 +1,34 @@
 import discord
 from discord.ext import commands
-import time
 from collections import defaultdict
+import time
 from datetime import timedelta
 
+ADMIN_IDS = {
+    487562926333493249
+}
+
 class AntiSpam(commands.Cog):
+
     def __init__(self, bot):
+
         self.bot = bot
-
-        # ADMIN ID (thêm ID của bạn vào đây)
-        self.ADMIN_IDS = {
-            487562926333493249  # Admin 1
-                                 # Admin 2
-        }
-
-        # lưu lịch sử tin nhắn
         self.user_messages = defaultdict(list)
 
-        # config anti spam
         self.TIME_WINDOW = 5
         self.MESSAGE_LIMIT = 5
 
+
     def is_admin(self, member: discord.Member):
-        return (
-            member.id in self.ADMIN_IDS or
-            member.guild_permissions.administrator
-        )
+
+        if member.id in ADMIN_IDS:
+            return True
+
+        if member.guild_permissions.administrator:
+            return True
+
+        return False
+
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -33,45 +36,44 @@ class AntiSpam(commands.Cog):
         if not message.guild:
             return
 
-        # bỏ qua bot
         if message.author.bot:
             return
 
-        # bỏ qua admin ID
+        # bypass admin
         if self.is_admin(message.author):
             return
 
-        user_id = message.author.id
+        key = (message.guild.id, message.author.id)
         now = time.time()
 
-        self.user_messages[user_id].append(now)
+        self.user_messages[key].append(now)
 
-        # lọc message cũ
-        self.user_messages[user_id] = [
-            t for t in self.user_messages[user_id]
+        self.user_messages[key] = [
+            t for t in self.user_messages[key]
             if now - t <= self.TIME_WINDOW
         ]
 
-        # detect spam
-        if len(self.user_messages[user_id]) >= self.MESSAGE_LIMIT:
+        if len(self.user_messages[key]) >= self.MESSAGE_LIMIT:
 
             try:
+
                 await message.channel.send(
-                    f"🚫 Spam detected from {message.author.mention}",
+                    f"🚫 Spam detected {message.author.mention}",
                     delete_after=5
                 )
 
-                # timeout user
                 await message.author.timeout(
                     timedelta(seconds=30),
                     reason="Spam detected"
                 )
 
             except Exception as e:
-                print(e)
 
-            # reset counter
-            self.user_messages[user_id].clear()
+                print("Spam error:", e)
+
+            self.user_messages[key].clear()
+
+        await self.bot.process_commands(message)
 
 
 async def setup(bot):
