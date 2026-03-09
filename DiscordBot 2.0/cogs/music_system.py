@@ -86,4 +86,5 @@ class MusicSystem(commands.Cog):
         await ctx.send("⏹ Stopped music")
 
 async def setup(bot):
-    await bot.add_cog(Music(bot))
+    await bot.add_cog(MusicSystem(bot))
+
