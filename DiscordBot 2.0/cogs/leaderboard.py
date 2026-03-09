@@ -1,7 +1,8 @@
-from PIL.Image import msg
+
 import discord
 from discord.ext import commands
 from flask import ctx
+from PIL import Image, ImageDraw, ImageFont
 
 levels = {}
 
