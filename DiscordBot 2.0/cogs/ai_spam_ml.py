@@ -4,22 +4,24 @@ from collections import defaultdict
 import time
 from datetime import timedelta
 
-ADMIN_IDS = {
-    487562926333493249
-}
+ADMIN_IDS = {487562926333493249}
 
 class AntiSpam(commands.Cog):
 
     def __init__(self, bot):
-
         self.bot = bot
+
         self.user_messages = defaultdict(list)
 
-        self.TIME_WINDOW = 5
+        # config
+        self.TIME_WINDOW = 10
         self.MESSAGE_LIMIT = 5
 
+        # bật / tắt hệ thống
+        self.enabled = True
 
-    def is_admin(self, member: discord.Member):
+
+    def bypass(self, member: discord.Member):
 
         if member.id in ADMIN_IDS:
             return True
@@ -28,6 +30,24 @@ class AntiSpam(commands.Cog):
             return True
 
         return False
+
+
+    @commands.command()
+    @commands.has_permissions(administrator=True)
+    async def antispam(self, ctx, mode: str):
+
+        mode = mode.lower()
+
+        if mode == "on":
+            self.enabled = True
+            await ctx.send("✅ Anti-Spam enabled")
+
+        elif mode == "off":
+            self.enabled = False
+            await ctx.send("❌ Anti-Spam disabled")
+
+        else:
+            await ctx.send("Usage: `!antispam on/off`")
 
 
     @commands.Cog.listener()
@@ -39,8 +59,10 @@ class AntiSpam(commands.Cog):
         if message.author.bot:
             return
 
-        # bypass admin
-        if self.is_admin(message.author):
+        if not self.enabled:
+            return
+
+        if self.bypass(message.author):
             return
 
         key = (message.guild.id, message.author.id)
@@ -68,8 +90,7 @@ class AntiSpam(commands.Cog):
                 )
 
             except Exception as e:
-
-                print("Spam error:", e)
+                print(e)
 
             self.user_messages[key].clear()
 
