@@ -31,3 +31,6 @@ class MusicControls(discord.ui.View):
 
         await self.vc.disconnect()
         await interaction.response.send_message("⏹ Stopped", ephemeral=True)
+async def setup(bot):
+    await bot.add_cog(MusicUI(bot))
+
