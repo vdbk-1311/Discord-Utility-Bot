@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 import os
 
-TOKEN = "MTQ3OTU2OTQ3NzY2MTM2MDMxOA.GLa5OY.1a_tFbxqvP7oCD6L4JrwE4vUKtqQ-Trx493Eco"
+TOKEN = "TOKEN_BOT_HERE"
 
 intents = discord.Intents.all()
 
@@ -34,5 +34,6 @@ async def on_ready():
     await bot.tree.sync()
 
 def start_bot():
+
 
     bot.run(TOKEN)
