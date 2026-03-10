@@ -1,0 +1,12 @@
+discord.py
+flask
+aiosqlite
+python-dotenv
+scikit-learn
+pillow
+yt-dlp
+discord.py
+yt-dlp
+PyNaCl
+spotipy
+requests
