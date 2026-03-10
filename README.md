@@ -193,8 +193,8 @@ F1 --> G1
 
 ## 1. Clone the repository
 
-    git clone https://github.com/yourname/discord-ai-bot
-    cd discord-ai-bot
+    git clone (https://github.com/vdbk-1311/Discord-Utility-Bot)
+    cd Discord-Utility-Bot
 
 ------------------------------------------------------------------------
 
